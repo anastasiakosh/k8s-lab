@@ -1,0 +1,31 @@
+name: Kubernetes CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "task-pipeline-ci-cd" ]
+
+jobs:
+  deploy-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start Minikube
+        uses: medyagh/setup-minikube@latest
+        with:
+          addons: ingress
+
+      - name: Pull base image into Minikube
+        run: |
+          eval $(minikube -p minikube docker-env)
+          docker pull alpine:latest
+
+      - name: Deploy application via script
+        run: ./deploy.sh
+
+      - name: Verify pods and shared volumes
+        run: |
+          sleep 6
+          kubectl get pods -o wide
+          kubectl logs deployment/node-reader --tail=3
